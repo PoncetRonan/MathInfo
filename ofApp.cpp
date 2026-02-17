@@ -11,10 +11,8 @@ void ofApp::setup(){
 	phaseAdder 			= 0.0f;
 	phaseAdderTarget 	= 0.0f;
 	volume				= 0.1f;
-	bNoise 				= false;
 
 	lAudio.assign(bufferSize, 0.0);
-	rAudio.assign(bufferSize, 0.0);
 	uAudio.assign(bufferSize, 0.0);
 	fTransform.assign(bufferSize, 0.0);
 	f1Transform.assign(bufferSize, 0.0);
@@ -24,55 +22,18 @@ void ofApp::setup(){
 
 	ofSoundStreamSettings settings;
 
-	// if you want to set the device id to be different than the default:
-	//
-	//	auto devices = soundStream.getDeviceList();
-	//	settings.setOutDevice(devices[3]);
-
-	// you can also get devices for an specific api:
-	//
-	//	auto devices = soundStream.getDeviceList(ofSoundDevice::Api::PULSE);
-	//	settings.setOutDevice(devices[0]);
-
-	// or get the default device for an specific api:
-	//
-	// settings.api = ofSoundDevice::Api::PULSE;
-
-	// or by name:
-	//
-	//	auto devices = soundStream.getMatchingDevices("default");
-	//	if(!devices.empty()){
-	//		settings.setOutDevice(devices[0]);
-	//	}
-
-
-	// Latest linux versions default to the HDMI output
-	// this usually fixes that. Also check the list of available
-	// devices if sound doesn't work
-
-	//settings.setApi(ofSoundDevice::MS_ASIO);
-	//settings.setApi(ofSoundDevice::MS_WASAPI);
-	//settings.setApi(ofSoundDevice::MS_DS);
-
 	auto devices = soundStream.getMatchingDevices("default");
 	if(!devices.empty()){
 		settings.setOutDevice(devices[0]);
 	}
 
-
-
-
 	settings.setOutListener(this);
 	settings.sampleRate = sampleRate;
-	settings.numOutputChannels = 2;
+	settings.numOutputChannels = 1;
 	settings.numInputChannels = 0;
 	settings.bufferSize = bufferSize;
 	soundStream.setup(settings);
-
-	// on OSX: if you want to use ofSoundPlayer together with ofSoundStream you need to synchronize buffersizes.
-	// use ofFmodSetBuffersize(bufferSize) to set the buffersize in fmodx prior to loading a file.
 }
-
 
 //--------------------------------------------------------------
 void ofApp::update(){
@@ -84,95 +45,61 @@ void ofApp::draw(){
 
 	ofSetColor(225);
 	ofDrawBitmapString("AUDIO OUTPUT EXAMPLE", 32, 32);
-	ofDrawBitmapString("press 's' to unpause the audio\npress 'e' to pause the audio", 31, 92);
 	
 	ofNoFill();
 	
-	// draw the left channel:
+	// draw the mono channel:
 	ofPushStyle();
-		ofPushMatrix();
-		ofTranslate(32, 150, 0);
-			
-		ofSetColor(225);
-		ofDrawBitmapString("Left Channel", 4, 18);
-		
-		ofSetLineWidth(1);	
-		ofDrawRectangle(0, 0, 900, 200);
-
-		ofSetColor(245, 58, 135);
-		ofSetLineWidth(3);
-					
-			ofBeginShape();
-			for (unsigned int i = 0; i < uAudio.size(); i++){
-				float x =  ofMap(i, 0, uAudio.size(), 0, 900, true);
-				ofVertex(x, 100 -uAudio[i]*180.0f);
-			}
-			ofEndShape(false);
-			
-		ofPopMatrix();
-	ofPopStyle();
-
-	// draw the right channel:
-	ofPushStyle();
-		ofPushMatrix();
-		ofTranslate(32, 350, 0);
-			
-		ofSetColor(225);
-		ofDrawBitmapString("Right Channel", 4, 18);
-		
-		ofSetLineWidth(1);	
-		ofDrawRectangle(0, 0, 900, 200);
-
-		ofSetColor(245, 58, 135);
-		ofSetLineWidth(3);
-					
-			ofBeginShape();
-			for (unsigned int i = 0; i < fTransform.size() / 2; i++){
-				float x =  ofMap(i, 0, fTransform.size() / 2, 0, 900, true);
-				ofVertex(x, 100 -fTransform[i]*180.0f);
-			}
-			ofEndShape(false);
-			
-		ofPopMatrix();
-	ofPopStyle();
-	
+	ofPushMatrix();
+	ofTranslate(32, 150, 0);
 		
 	ofSetColor(225);
-	string reportString = "volume: ("+ofToString(volume, 2)+") modify with -/+ keys\npan: ("+ofToString(pan, 2)+") modify with mouse x\nsynthesis: ";
-	if( !bNoise ){
-		reportString += "sine wave (" + ofToString(targetFrequency, 2) + "hz) modify with mouse y";
-	}else{
-		reportString += "noise";	
+	ofDrawBitmapString("Mono Channel", 4, 18);
+	ofSetLineWidth(1);	
+	ofDrawRectangle(0, 0, 900, 200);
+
+	ofSetColor(245, 58, 135);
+	ofSetLineWidth(3);
+	ofBeginShape();
+	for (unsigned int i = 0; i < uAudio.size(); i++){
+		float x =  ofMap(i, 0, uAudio.size(), 0, 900, true);
+		ofVertex(x, 100 - uAudio[i]*180.0f);
 	}
+	ofEndShape(false);
+	ofPopMatrix();
+	ofPopStyle();
+
+	// draw the FFT:
+	ofPushStyle();
+	ofPushMatrix();
+	ofTranslate(32, 350, 0);
+		
+	ofSetColor(225);
+	ofDrawBitmapString("FFT", 4, 18);
+	ofSetLineWidth(1);	
+	ofDrawRectangle(0, 0, 900, 200);
+
+	ofSetColor(245, 58, 135);
+	ofSetLineWidth(3);
+	ofBeginShape();
+	for (unsigned int i = 0; i < fTransform.size() / 2; i++){
+		float x =  ofMap(i, 0, fTransform.size() / 2, 0, 900, true);
+		ofVertex(x, 100 - fTransform[i]*180.0f);
+	}
+	ofEndShape(false);
+	ofPopMatrix();
+	ofPopStyle();
+	
+	ofSetColor(225);
+	string reportString = "volume: ("+ofToString(volume, 2)+")\npan: ("+ofToString(pan, 2)+") modify with mouse x\nsynthesis: sine wave (" + ofToString(targetFrequency, 2) + "hz) modify with mouse y";
 	ofDrawBitmapString(reportString, 32, 579);
-
-}
-
-
-//--------------------------------------------------------------
-void ofApp::keyPressed  (int key){
-	if (key == '-' || key == '_' ){
-		volume -= 0.05;
-		volume = std::max(volume, 0.f);
-	} else if (key == '+' || key == '=' ){
-		volume += 0.05;
-		volume = std::min(volume, 1.f);
-	}
-	
-	if( key == 's' ){
-		soundStream.start();
-	}
-	
-	if( key == 'e' ){
-		soundStream.stop();
-	}
-	
 }
 
 //--------------------------------------------------------------
-void ofApp::keyReleased  (int key){
+void ofApp::keyPressed(int key){ }
 
-}
+//--------------------------------------------------------------
+void ofApp::keyReleased(int key){ }
 
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y ){
@@ -191,80 +118,56 @@ void ofApp::mouseDragged(int x, int y, int button){
 }
 
 //--------------------------------------------------------------
-void ofApp::mousePressed(int x, int y, int button){
-	bNoise = true;
-}
-
+void ofApp::mousePressed(int x, int y, int button){ }
 
 //--------------------------------------------------------------
-void ofApp::mouseReleased(int x, int y, int button){
-	bNoise = false;
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseEntered(int x, int y){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseExited(int x, int y){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::windowResized(int w, int h){
-
-}
+void ofApp::mouseReleased(int x, int y, int button){ }
 
 //--------------------------------------------------------------
 void ofApp::audioOut(ofSoundBuffer & buffer){
-	//pan = 0.5f;
-	float leftScale = 1 - pan;
-	float rightScale = pan;
 
-	// sin (n) seems to have trouble when n is very large, so we
-	// keep phase in the range of 0-glm::two_pi<float>() like this:
 	while (phase > glm::two_pi<float>()){
 		phase -= glm::two_pi<float>();
 	}
 
-	if ( bNoise == true){
-		// ---------------------- noise --------------
-		for (size_t i = 0; i < buffer.getNumFrames(); i++){
-			lAudio[i] = buffer[i*buffer.getNumChannels()    ] = ofRandom(0, 1) * volume * leftScale;
-			rAudio[i] = buffer[i*buffer.getNumChannels() + 1] = ofRandom(0, 1) * volume * rightScale;
-		}
-	} else {
-		phaseAdder = 0.95f * phaseAdder + 0.05f * phaseAdderTarget;
-		for (size_t i = 0; i < buffer.getNumFrames(); i++){
-			phase += phaseAdder;
-			float sample = sin(phase);
-			lAudio[i] = buffer[i*buffer.getNumChannels()    ] = sample * volume * leftScale;
-			rAudio[i] = buffer[i*buffer.getNumChannels() + 1] = sample * volume * rightScale;
-		}
-	}
-	for (size_t i = 0; i < buffer.getNumFrames(); i++) {
-    	uAudio[i] = lAudio[i] + rAudio[i];
+	phaseAdder = 0.95f * phaseAdder + 0.05f * phaseAdderTarget;
+	for (size_t i = 0; i < buffer.getNumFrames(); i++){
+		phase += phaseAdder;
+		float sample = sin(phase);
+		lAudio[i] = buffer[i * buffer.getNumChannels()] = sample * volume;
 	}
 
 	for (size_t i = 0; i < buffer.getNumFrames(); i++) {
+		uAudio[i] = lAudio[i];
+	}
+
+	// calcul FFT
+	computeFourierTransform(buffer);
+}
+
+//--------------------------------------------------------------
+void ofApp::computeFourierTransform(const ofSoundBuffer& buffer) {
+
+	size_t N = buffer.getNumFrames();
+
+	for (size_t i = 0; i < N; i++) {
 		f1Transform[i] = 0;
-    	f2Transform[i] = 0;
-		for (size_t j = 0; j < buffer.getNumFrames(); j++) {		
-			f1Transform[i] +=  uAudio[j] * cos(2 * PI * i * j / buffer.getNumFrames());
-			f2Transform[i] +=  uAudio[j] * sin(2 * PI * i * j / buffer.getNumFrames());
+		f2Transform[i] = 0;
+
+		for (size_t j = 0; j < N; j++) {
+			float angle = 2 * PI * i * j / N;
+			f1Transform[i] += uAudio[j] * cos(angle);
+			f2Transform[i] += uAudio[j] * sin(angle);
 		}
 	}
-	for (size_t i = 0; i < buffer.getNumFrames(); i++) {
-		fTransform[i] = 5 * sqrt(f1Transform[i] * f1Transform[i] + f2Transform[i] * f2Transform[i]) / buffer.getNumFrames() ;
+
+	for (size_t i = 0; i < N; i++) {
+		fTransform[i] = 5 * sqrt(f1Transform[i]*f1Transform[i] + f2Transform[i]*f2Transform[i]) / N;
 	}
 }
-//--------------------------------------------------------------
-void ofApp::gotMessage(ofMessage msg){
-
-}
 
 //--------------------------------------------------------------
-void ofApp::dragEvent(ofDragInfo dragInfo){ 
+void ofApp::gotMessage(ofMessage msg){ }
 
-}
+//--------------------------------------------------------------
+void ofApp::dragEvent(ofDragInfo dragInfo){ }

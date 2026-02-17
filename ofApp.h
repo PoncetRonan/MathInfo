@@ -16,24 +16,19 @@ class ofApp : public ofBaseApp{
 		void mouseDragged(int x, int y, int button);
 		void mousePressed(int x, int y, int button);
 		void mouseReleased(int x, int y, int button);
-		void mouseEntered(int x, int y);
-		void mouseExited(int x, int y);
-		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
 		
 		void audioOut(ofSoundBuffer & buffer);
-		
+		void computeFourierTransform(const ofSoundBuffer& buffer);
 		
 		ofSoundStream soundStream;
 
 		float 	pan;
 		int		sampleRate;
-		bool 	bNoise;
 		float 	volume;
 
 		vector <float> lAudio;
-		vector <float> rAudio;
 		vector <float> uAudio;
 		vector <float> fTransform;
 		vector <float> f1Transform;

@@ -22,20 +22,29 @@ void ofApp::setup(){
 
     pan = 0.5f;
 
-    lAudio.assign(bufferSize, 0.0);
-    uAudio.assign(bufferSize, 0.0);
-    fTransform.assign(bufferSize, 0.0);
-    f1Transform.assign(bufferSize, 0.0);
-    f2Transform.assign(bufferSize, 0.0);
+	lAudio.assign(bufferSize, 0.0);
+	uAudio.assign(bufferSize, 0.0);
+	fTransform.assign(bufferSize, 0.0);
+	f1Transform.assign(bufferSize, 0.0);
+	f2Transform.assign(bufferSize, 0.0);
+	
+	oscillator.setup(sampleRate);
 
-    ofSoundStreamSettings settings;
-    settings.setOutListener(this);
-    settings.sampleRate = sampleRate;
-    settings.numOutputChannels = 1;
-    settings.numInputChannels = 0;
-    settings.bufferSize = bufferSize;
+	soundStream.printDeviceList();
 
-    soundStream.setup(settings);
+	ofSoundStreamSettings settings;
+
+	auto devices = soundStream.getMatchingDevices("default");
+	if(!devices.empty()){
+		settings.setOutDevice(devices[0]);
+	}
+
+	settings.setOutListener(this);
+	settings.sampleRate = sampleRate;
+	settings.numOutputChannels = 1;
+	settings.numInputChannels = 0;
+	settings.bufferSize = bufferSize;
+	soundStream.setup(settings);
 }
 
 //--------------------------------------------------------------
@@ -44,36 +53,41 @@ void ofApp::update(){ }
 //--------------------------------------------------------------
 void ofApp::draw(){
 
-    ofSetColor(225);
-    ofDrawBitmapString("AUDIO OUTPUT EXAMPLE", 32, 32);
+	ofSetColor(225);
+	ofDrawBitmapString("AUDIO OUTPUT EXAMPLE", 32, 32);
+	
+	ofNoFill();
+	
+	// draw the mono channel:
+	ofPushStyle();
+	ofPushMatrix();
+	ofTranslate(32, 150, 0);
+		
+	ofSetColor(225);
+	ofDrawBitmapString("Mono Channel", 4, 18);
+	ofSetLineWidth(1);	
+	ofDrawRectangle(0, 0, 900, 200);
 
-    ofNoFill();
+	ofSetColor(245, 58, 135);
+	ofSetLineWidth(3);
+	ofBeginShape();
+	for (unsigned int i = 0; i < uAudio.size(); i++){
+		float x =  ofMap(i, 0, uAudio.size(), 0, 900, true);
+		ofVertex(x, 100 - uAudio[i]*180.0f);
+	}
+	ofEndShape(false);
+	ofPopMatrix();
+	ofPopStyle();
 
-    // ===== MONO WAVEFORM =====
-    ofPushMatrix();
-    ofTranslate(32, 150, 0);
-
-    ofSetColor(225);
-    ofDrawBitmapString("Mono Channel", 4, 18);
-    ofDrawRectangle(0, 0, 900, 200);
-
-    ofSetColor(245, 58, 135);
-    ofSetLineWidth(3);
-    ofBeginShape();
-    for (unsigned int i = 0; i < uAudio.size(); i++){
-        float x = ofMap(i, 0, uAudio.size(), 0, 900, true);
-        ofVertex(x, 100 - uAudio[i] * 180.0f);
-    }
-    ofEndShape(false);
-    ofPopMatrix();
-
-    // ===== FFT =====
-    ofPushMatrix();
-    ofTranslate(32, 350, 0);
-
-    ofSetColor(225);
-    ofDrawBitmapString("FFT", 4, 18);
-    ofDrawRectangle(0, 0, 900, 200);
+	// draw the FFT:
+	ofPushStyle();
+	ofPushMatrix();
+	ofTranslate(32, 350, 0);
+		
+	ofSetColor(225);
+	ofDrawBitmapString("FFT", 4, 18);
+	ofSetLineWidth(1);	
+	ofDrawRectangle(0, 0, 900, 200);
 
     ofSetColor(245, 58, 135);
     ofSetLineWidth(3);
@@ -138,8 +152,10 @@ void ofApp::mouseDragged(int x, int y, int button){
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button){ }
+void ofApp::mousePressed(int x, int y, int button){ }
 
 //--------------------------------------------------------------
+void ofApp::mouseReleased(int x, int y, int button){ }
 void ofApp::mouseReleased(int x, int y, int button){ }
 
 //--------------------------------------------------------------
@@ -165,7 +181,8 @@ void ofApp::audioOut(ofSoundBuffer & buffer){
         }
 
         phase += phaseAdder;
-        float sample = sin(phase);
+		oscillator.set
+        float sample = oscillator.getNextSample();
 
         buffer[i] = sample * volume;
         lAudio[i] = buffer[i];
@@ -194,9 +211,46 @@ void ofApp::computeFourierTransform(const ofSoundBuffer& buffer){
     for (size_t i = 0; i < N; i++){
         fTransform[i] = 5 * sqrt(f1Transform[i]*f1Transform[i] + f2Transform[i]*f2Transform[i]) / N;
     }
+	phaseAdder = 0.95f * phaseAdder + 0.05f * phaseAdderTarget;
+	for (size_t i = 0; i < buffer.getNumFrames(); i++){
+		phase += phaseAdder;
+		// float sample = sin(phase);
+		oscillator.setFrequency(targetFrequency);
+		float sample = oscillator.getNextSample();
+		lAudio[i] = buffer[i * buffer.getNumChannels()] = sample * volume;
+	}
+
+	for (size_t i = 0; i < buffer.getNumFrames(); i++) {
+		uAudio[i] = lAudio[i];
+	}
+
+	// calcul FFT
+	computeFourierTransform(buffer);
 }
 
 //--------------------------------------------------------------
+void ofApp::computeFourierTransform(const ofSoundBuffer& buffer) {
+
+	size_t N = buffer.getNumFrames();
+
+	for (size_t i = 0; i < N; i++) {
+		f1Transform[i] = 0;
+		f2Transform[i] = 0;
+
+		for (size_t j = 0; j < N; j++) {
+			float angle = 2 * PI * i * j / N;
+			f1Transform[i] += uAudio[j] * cos(angle);
+			f2Transform[i] += uAudio[j] * sin(angle);
+		}
+	}
+
+	for (size_t i = 0; i < N; i++) {
+		fTransform[i] = 5 * sqrt(f1Transform[i]*f1Transform[i] + f2Transform[i]*f2Transform[i]) / N;
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::gotMessage(ofMessage msg){ }
 void ofApp::gotMessage(ofMessage msg){ }
 
 //--------------------------------------------------------------

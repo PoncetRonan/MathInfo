@@ -1,16 +1,26 @@
 #include "ofApp.h"
-
+#include "Oscillator.h"
 //--------------------------------------------------------------
 void ofApp::setup(){
 
-	ofBackground(34, 34, 34);
-	
-	int bufferSize		= 512;
-	sampleRate 			= 44100;
-	phase 				= 0;
-	phaseAdder 			= 0.0f;
-	phaseAdderTarget 	= 0.0f;
-	volume				= 0.1f;
+    ofBackground(34, 34, 34);
+
+    int bufferSize = 512;
+    sampleRate = 44100;
+
+    phase = 0;
+    phaseAdder = 0.0f;
+    phaseAdderTarget = 0.0f;
+    targetFrequency = 261.63f; // Do par défaut
+
+    // ===== ENVELOPPE =====
+    volume = 0.0f;
+    targetVolume = 0.1f;   // volume maximum
+    attackSpeed = 0.002f;  // vitesse montée
+    releaseSpeed = 0.002f; // vitesse descente
+    noteIsOn = false;
+
+    pan = 0.5f;
 
 	lAudio.assign(bufferSize, 0.0);
 	uAudio.assign(bufferSize, 0.0);
@@ -38,9 +48,7 @@ void ofApp::setup(){
 }
 
 //--------------------------------------------------------------
-void ofApp::update(){
-
-}
+void ofApp::update(){ }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
@@ -81,46 +89,114 @@ void ofApp::draw(){
 	ofSetLineWidth(1);	
 	ofDrawRectangle(0, 0, 900, 200);
 
-	ofSetColor(245, 58, 135);
-	ofSetLineWidth(3);
-	ofBeginShape();
-	for (unsigned int i = 0; i < fTransform.size() / 2; i++){
-		float x =  ofMap(i, 0, fTransform.size() / 2, 0, 900, true);
-		ofVertex(x, 100 - fTransform[i]*180.0f);
-	}
-	ofEndShape(false);
-	ofPopMatrix();
-	ofPopStyle();
-	
-	ofSetColor(225);
-	string reportString = "volume: ("+ofToString(volume, 2)+")\npan: ("+ofToString(pan, 2)+") modify with mouse x\nsynthesis: sine wave (" + ofToString(targetFrequency, 2) + "hz) modify with mouse y";
-	ofDrawBitmapString(reportString, 32, 579);
+    ofSetColor(245, 58, 135);
+    ofSetLineWidth(3);
+    ofBeginShape();
+    for (unsigned int i = 0; i < fTransform.size() / 2; i++){
+        float x = ofMap(i, 0, fTransform.size() / 2, 0, 900, true);
+        ofVertex(x, 100 - fTransform[i] * 180.0f);
+    }
+    ofEndShape(false);
+    ofPopMatrix();
+
+    ofSetColor(225);
+	string reportString = string("Envelope synth\n") // Wrap the first one in string()
+						+ "Current volume: " + ofToString(volume, 2) + "\n"
+						+ "Frequency: " + ofToString(targetFrequency, 2) + " Hz\n"
+						+ "White Keys: a z e r t y u" + "\n" +
+						+ "Black Keys: s d f g h" + "\n" +
+						+ "Brillance " + ofToString(oscillator.brightness) + "\n" +
+						+ "Forme d'onde " + ofToString(oscillator.waveform);
+    ofDrawBitmapString(reportString, 32, 579);
 }
 
 //--------------------------------------------------------------
-void ofApp::keyPressed(int key){ }
+void ofApp::keyPressed(int key){
+
+	// oscillator.setWaveform(SQUARE);
+
+    float frequency = 0;
+
+	switch(key){
+		// touches blanches
+		case 'a': frequency = 261.63f; break; // Do
+		case 'z': frequency = 293.66f; break; // Ré
+		case 'e': frequency = 329.63f; break; // Mi
+		case 'r': frequency = 349.23f; break; // Fa
+		case 't': frequency = 392.00f; break; // Sol
+		case 'y': frequency = 440.00f; break; // La
+		case 'u': frequency = 493.88f; break; // Si
+
+		// touches noires (dièses)
+		case 's': frequency = 277.18f; break; // Do#
+		case 'd': frequency = 311.13f; break; // Ré#
+		case 'f': frequency = 369.99f; break; // Fa#
+		case 'g': frequency = 415.30f; break; // Sol#
+		case 'h': frequency = 466.16f; break; // La#
+	}
+		if(key == 'w'){
+        if(oscillator.waveform == SINE) oscillator.setWaveform(SQUARE);
+        else if(oscillator.waveform == SQUARE) oscillator.setWaveform(SAW);
+        else if(oscillator.waveform == SAW) oscillator.setWaveform(TRIANGLE);
+        else if(oscillator.waveform == TRIANGLE) oscillator.setWaveform(SINE);
+    }
+
+		if(key == OF_KEY_UP){
+			if(oscillator.octave < 10){
+			oscillator.octave +=1;
+		}
+	}
+		if(key == OF_KEY_DOWN){
+			if(oscillator.octave != 0){
+			oscillator.octave -=1;
+		}
+	}
+
+
+
+	if(key == '+'){
+
+		oscillator.setBrightness(oscillator.brightness + 1);
+	}
+
+	if(key == '-'){
+		if(oscillator.brightness == 0){}
+		else{
+		oscillator.setBrightness(oscillator.brightness - 1);
+		}
+	}
+    if(frequency > 0){
+        targetFrequency = frequency *std::pow(2,oscillator.octave);
+        phaseAdderTarget = (targetFrequency / (float)sampleRate) * glm::two_pi<float>();
+        noteIsOn = true; // déclenche Attack
+    }
+}
 
 //--------------------------------------------------------------
-void ofApp::keyReleased(int key){ }
+void ofApp::keyReleased(int key){
+
+    switch(key){
+        case 'a': case 'z': case 'e': case 'r':
+        case 't': case 'y': case 'u': case 's': 
+		case 'd': case 'f': case 'g': case 'h':
+            noteIsOn = false; // déclenche Release
+            break;
+    }
+}
 
 //--------------------------------------------------------------
-void ofApp::mouseMoved(int x, int y ){
-	int width = ofGetWidth();
-	pan = (float)x / (float)width;
-	float height = (float)ofGetHeight();
-	float heightPct = ((height-y) / height);
-	targetFrequency = 22000.0f * heightPct;
-	phaseAdderTarget = (targetFrequency / (float) sampleRate) * glm::two_pi<float>();
+void ofApp::mouseMoved(int x, int y){
+    pan = (float)x / (float)ofGetWidth();
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseDragged(int x, int y, int button){
-	int width = ofGetWidth();
-	pan = (float)x / (float)width;
+    pan = (float)x / (float)ofGetWidth();
 }
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button){ }
+
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button){ }
@@ -128,25 +204,35 @@ void ofApp::mouseReleased(int x, int y, int button){ }
 //--------------------------------------------------------------
 void ofApp::audioOut(ofSoundBuffer & buffer){
 
-	while (phase > glm::two_pi<float>()){
-		phase -= glm::two_pi<float>();
-	}
+    while (phase > glm::two_pi<float>()){
+        phase -= glm::two_pi<float>();
+    }
 
-	phaseAdder = 0.95f * phaseAdder + 0.05f * phaseAdderTarget;
-	for (size_t i = 0; i < buffer.getNumFrames(); i++){
-		phase += phaseAdder;
-		// float sample = sin(phase);
+    phaseAdder = 0.95f * phaseAdder + 0.05f * phaseAdderTarget;
+
+    for (size_t i = 0; i < buffer.getNumFrames(); i++){
+
+        // ===== ENVELOPPE ATTACK / RELEASE =====
+        if(noteIsOn){
+            volume += attackSpeed;
+            if(volume > targetVolume)
+                volume = targetVolume;
+        }else{
+            volume -= releaseSpeed;
+            if(volume < 0.0f)
+                volume = 0.0f;
+        }
+
+        phase += phaseAdder;
 		oscillator.setFrequency(targetFrequency);
-		float sample = oscillator.getNextSample();
-		lAudio[i] = buffer[i * buffer.getNumChannels()] = sample * volume;
-	}
+        float sample = oscillator.getNextSample();
 
-	for (size_t i = 0; i < buffer.getNumFrames(); i++) {
-		uAudio[i] = lAudio[i];
-	}
+        buffer[i] = sample * volume;
+        lAudio[i] = buffer[i];
+        uAudio[i] = buffer[i];
+    }
 
-	// calcul FFT
-	computeFourierTransform(buffer);
+    computeFourierTransform(buffer);
 }
 
 //--------------------------------------------------------------
@@ -169,6 +255,7 @@ void ofApp::computeFourierTransform(const ofSoundBuffer& buffer) {
 		fTransform[i] = 5 * sqrt(f1Transform[i]*f1Transform[i] + f2Transform[i]*f2Transform[i]) / N;
 	}
 }
+
 
 //--------------------------------------------------------------
 void ofApp::gotMessage(ofMessage msg){ }

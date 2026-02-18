@@ -9,7 +9,7 @@ Oscillator::Oscillator()
 }
 
 // Constructor with sample rate
-Oscillator::setup(float sr)
+void Oscillator::setup(float sr)
 {
     sampleRate = sr;
     frequency = 440.0f;

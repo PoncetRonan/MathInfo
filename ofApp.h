@@ -33,6 +33,7 @@ class ofApp : public ofBaseApp{
 		vector <float> fTransform;
 		vector <float> f1Transform;
 		vector <float> f2Transform;
+		
 
 		//------------------- for the simple sine wave synthesis
 		float 	targetFrequency;

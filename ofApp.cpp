@@ -135,7 +135,9 @@ void ofApp::audioOut(ofSoundBuffer & buffer){
 	phaseAdder = 0.95f * phaseAdder + 0.05f * phaseAdderTarget;
 	for (size_t i = 0; i < buffer.getNumFrames(); i++){
 		phase += phaseAdder;
-		float sample = sin(phase);
+		// float sample = sin(phase);
+		oscillator.setFrequency(targetFrequency);
+		float sample = oscillator.getNextSample();
 		lAudio[i] = buffer[i * buffer.getNumChannels()] = sample * volume;
 	}
 

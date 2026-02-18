@@ -2,6 +2,7 @@
 
 #include "ofMain.h"
 #include "Oscillator.h"
+#include "def.h"
 
 class ofApp : public ofBaseApp{
 
@@ -40,10 +41,13 @@ class ofApp : public ofBaseApp{
 		float phaseAdder;
 		float phaseAdderTarget;
 
+
 		// ===== ENVELOPPE =====
 		float volume;        // volume courant
 		float targetVolume;  // volume max
 		float attackSpeed;   // vitesse montée
 		float releaseSpeed;  // vitesse descente
 		bool  noteIsOn;      // état de la note
+
+		Oscillator oscillator;
 };

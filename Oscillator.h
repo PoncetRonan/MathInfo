@@ -1,18 +1,11 @@
 #pragma once
 
 #include "ofMain.h"
+#include "def.h"
 
 class Oscillator
 {
 public:
-
-    enum Waveform
-    {
-        SINE,
-        SQUARE,
-        SAW,
-        TRIANGLE
-    };
 
     Oscillator();
 
@@ -25,14 +18,17 @@ public:
 
     // Get next sample
     float getNextSample();
+    int brightness;
+    Waveform waveform;
+    int octave;
 
 private:
     float sampleRate;
     float frequency;
     float phase;
     float phaseIncrement;
-    Waveform waveform;
-    int brightness;
+
+
 
     void updatePhaseIncrement();
 };

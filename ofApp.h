@@ -10,9 +10,9 @@ class ofApp : public ofBaseApp{
 		void update();
 		void draw();
 
-		void keyPressed  (int key);
+		void keyPressed(int key);
 		void keyReleased(int key);
-		void mouseMoved(int x, int y );
+		void mouseMoved(int x, int y);
 		void mouseDragged(int x, int y, int button);
 		void mousePressed(int x, int y, int button);
 		void mouseReleased(int x, int y, int button);
@@ -24,20 +24,26 @@ class ofApp : public ofBaseApp{
 		
 		ofSoundStream soundStream;
 
-		float 	pan;
-		int		sampleRate;
-		float 	volume;
+		float pan;
+		int sampleRate;
 
-		vector <float> lAudio;
-		vector <float> uAudio;
-		vector <float> fTransform;
-		vector <float> f1Transform;
-		vector <float> f2Transform;
-		
+		// AUDIO BUFFERS
+		vector<float> lAudio;
+		vector<float> uAudio;
+		vector<float> fTransform;
+		vector<float> f1Transform;
+		vector<float> f2Transform;
 
-		//------------------- for the simple sine wave synthesis
-		float 	targetFrequency;
-		float 	phase;
-		float 	phaseAdder;
-		float 	phaseAdderTarget;
+		// SINE WAVE
+		float targetFrequency;
+		float phase;
+		float phaseAdder;
+		float phaseAdderTarget;
+
+		// ===== ENVELOPPE =====
+		float volume;        // volume courant
+		float targetVolume;  // volume max
+		float attackSpeed;   // vitesse montée
+		float releaseSpeed;  // vitesse descente
+		bool  noteIsOn;      // état de la note
 };

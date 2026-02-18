@@ -4,36 +4,37 @@
 void ofApp::setup(){
 
     ofBackground(34, 34, 34);
-    
-    int bufferSize      = 512;
-    sampleRate          = 44100;
-    phase               = 0;
-    phaseAdder          = 0.0f;
-    phaseAdderTarget    = 0.0f;
-    volume              = 0.0f;
-    pan                 = 0.5f;
-    targetFrequency     = 261.63f; // Do par défaut
+
+    int bufferSize = 512;
+    sampleRate = 44100;
+
+    phase = 0;
+    phaseAdder = 0.0f;
+    phaseAdderTarget = 0.0f;
+    targetFrequency = 261.63f; // Do par défaut
+
+    // ===== ENVELOPPE =====
+    volume = 0.0f;
+    targetVolume = 0.1f;   // volume maximum
+    attackSpeed = 0.002f;  // vitesse montée
+    releaseSpeed = 0.002f; // vitesse descente
+    noteIsOn = false;
+
+    pan = 0.5f;
 
     lAudio.assign(bufferSize, 0.0);
     uAudio.assign(bufferSize, 0.0);
     fTransform.assign(bufferSize, 0.0);
     f1Transform.assign(bufferSize, 0.0);
     f2Transform.assign(bufferSize, 0.0);
-    
-    soundStream.printDeviceList();
 
     ofSoundStreamSettings settings;
-
-    auto devices = soundStream.getMatchingDevices("default");
-    if(!devices.empty()){
-        settings.setOutDevice(devices[0]);
-    }
-
     settings.setOutListener(this);
     settings.sampleRate = sampleRate;
     settings.numOutputChannels = 1;
     settings.numInputChannels = 0;
     settings.bufferSize = bufferSize;
+
     soundStream.setup(settings);
 }
 
@@ -45,17 +46,15 @@ void ofApp::draw(){
 
     ofSetColor(225);
     ofDrawBitmapString("AUDIO OUTPUT EXAMPLE", 32, 32);
-    
+
     ofNoFill();
-    
-    // draw the mono channel:
-    ofPushStyle();
+
+    // ===== MONO WAVEFORM =====
     ofPushMatrix();
     ofTranslate(32, 150, 0);
-        
+
     ofSetColor(225);
     ofDrawBitmapString("Mono Channel", 4, 18);
-    ofSetLineWidth(1);  
     ofDrawRectangle(0, 0, 900, 200);
 
     ofSetColor(245, 58, 135);
@@ -63,20 +62,17 @@ void ofApp::draw(){
     ofBeginShape();
     for (unsigned int i = 0; i < uAudio.size(); i++){
         float x = ofMap(i, 0, uAudio.size(), 0, 900, true);
-        ofVertex(x, 100 - uAudio[i]*180.0f);
+        ofVertex(x, 100 - uAudio[i] * 180.0f);
     }
     ofEndShape(false);
     ofPopMatrix();
-    ofPopStyle();
 
-    // draw the FFT:
-    ofPushStyle();
+    // ===== FFT =====
     ofPushMatrix();
     ofTranslate(32, 350, 0);
-        
+
     ofSetColor(225);
     ofDrawBitmapString("FFT", 4, 18);
-    ofSetLineWidth(1);  
     ofDrawRectangle(0, 0, 900, 200);
 
     ofSetColor(245, 58, 135);
@@ -84,63 +80,60 @@ void ofApp::draw(){
     ofBeginShape();
     for (unsigned int i = 0; i < fTransform.size() / 2; i++){
         float x = ofMap(i, 0, fTransform.size() / 2, 0, 900, true);
-        ofVertex(x, 100 - fTransform[i]*180.0f);
+        ofVertex(x, 100 - fTransform[i] * 180.0f);
     }
     ofEndShape(false);
     ofPopMatrix();
-    ofPopStyle();
-    
+
     ofSetColor(225);
-    string reportString = "volume: (" + ofToString(volume, 2) + ") modify with + and -\n"
-                        + "pan: (" + ofToString(pan, 2) + ") modify with mouse x\n"
-                        + "synthesis: sine wave (" + ofToString(targetFrequency, 2) + "hz) - keys: a z e r t y u";
+	string reportString = string("Envelope synth\n") // Wrap the first one in string()
+						+ "Current volume: " + ofToString(volume, 2) + "\n"
+						+ "Frequency: " + ofToString(targetFrequency, 2) + " Hz\n"
+						+ "Keys: a z e r t y u";
     ofDrawBitmapString(reportString, 32, 579);
 }
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
+
     float frequency = 0;
 
     switch(key){
-        case 'a': frequency = 261.63f; break; // Do
-        case 'z': frequency = 293.66f; break; // Ré
-        case 'e': frequency = 329.63f; break; // Mi
-        case 'r': frequency = 349.23f; break; // Fa
-        case 't': frequency = 392.00f; break; // Sol
-        case 'y': frequency = 440.00f; break; // La
-        case 'u': frequency = 493.88f; break; // Si
-
-        case '+': volume = ofClamp(volume + 0.05f, 0.0f, 1.0f); break;
-        case '-': volume = ofClamp(volume - 0.05f, 0.0f, 1.0f); break;
+        case 'a': frequency = 261.63f; break;
+        case 'z': frequency = 293.66f; break;
+        case 'e': frequency = 329.63f; break;
+        case 'r': frequency = 349.23f; break;
+        case 't': frequency = 392.00f; break;
+        case 'y': frequency = 440.00f; break;
+        case 'u': frequency = 493.88f; break;
     }
 
     if(frequency > 0){
         targetFrequency = frequency;
         phaseAdderTarget = (targetFrequency / (float)sampleRate) * glm::two_pi<float>();
-        if(volume == 0.0f) volume = 0.1f; // active le son si volume était coupé
+        noteIsOn = true; // déclenche Attack
     }
 }
 
 //--------------------------------------------------------------
 void ofApp::keyReleased(int key){
+
     switch(key){
         case 'a': case 'z': case 'e': case 'r':
         case 't': case 'y': case 'u':
-            volume = 0.0f; // coupe le son au relâchement
+            noteIsOn = false; // déclenche Release
             break;
     }
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y){
-    int width = ofGetWidth();
-    pan = (float)x / (float)width;
+    pan = (float)x / (float)ofGetWidth();
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseDragged(int x, int y, int button){
-    int width = ofGetWidth();
-    pan = (float)x / (float)width;
+    pan = (float)x / (float)ofGetWidth();
 }
 
 //--------------------------------------------------------------
@@ -157,14 +150,26 @@ void ofApp::audioOut(ofSoundBuffer & buffer){
     }
 
     phaseAdder = 0.95f * phaseAdder + 0.05f * phaseAdderTarget;
-    for (size_t i = 0; i < buffer.getNumFrames(); i++){
-        phase += phaseAdder;
-        float sample = sin(phase);
-        lAudio[i] = buffer[i * buffer.getNumChannels()] = sample * volume;
-    }
 
     for (size_t i = 0; i < buffer.getNumFrames(); i++){
-        uAudio[i] = lAudio[i];
+
+        // ===== ENVELOPPE ATTACK / RELEASE =====
+        if(noteIsOn){
+            volume += attackSpeed;
+            if(volume > targetVolume)
+                volume = targetVolume;
+        }else{
+            volume -= releaseSpeed;
+            if(volume < 0.0f)
+                volume = 0.0f;
+        }
+
+        phase += phaseAdder;
+        float sample = sin(phase);
+
+        buffer[i] = sample * volume;
+        lAudio[i] = buffer[i];
+        uAudio[i] = buffer[i];
     }
 
     computeFourierTransform(buffer);

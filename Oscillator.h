@@ -14,8 +14,9 @@ public:
         TRIANGLE
     };
 
-    // Constructor with sample rate
-    explicit Oscillator(float sr);
+    Oscillator();
+
+    void setup(float sr);
 
     // Setters
     void setFrequency(float freq);

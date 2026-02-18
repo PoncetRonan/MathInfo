@@ -18,6 +18,8 @@ void ofApp::setup(){
 	f1Transform.assign(bufferSize, 0.0);
 	f2Transform.assign(bufferSize, 0.0);
 	
+	oscillator.setup(sampleRate);
+
 	soundStream.printDeviceList();
 
 	ofSoundStreamSettings settings;

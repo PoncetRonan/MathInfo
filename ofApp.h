@@ -1,11 +1,11 @@
 #pragma once
 
 #include "ofMain.h"
+#include "Oscillator.h"
 
 class ofApp : public ofBaseApp{
 
 	public:
-
 		void setup();
 		void update();
 		void draw();
@@ -39,4 +39,6 @@ class ofApp : public ofBaseApp{
 		float 	phase;
 		float 	phaseAdder;
 		float 	phaseAdderTarget;
+
+		Oscillator oscillator;
 };

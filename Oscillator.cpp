@@ -3,8 +3,13 @@
 #include <algorithm>
 #include <cmath>
 
+
+Oscillator::Oscillator()
+{
+}
+
 // Constructor with sample rate
-Oscillator::Oscillator(float sr)
+Oscillator::setup(float sr)
 {
     sampleRate = sr;
     frequency = 440.0f;

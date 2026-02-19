@@ -12,6 +12,7 @@ void ofApp::setup(){
     phaseAdder = 0.0f;
     phaseAdderTarget = 0.0f;
     targetFrequency = 261.63f; // Do par défaut
+	sample = 0;
 
     // ===== ENVELOPPE =====
     volume = 0.0f;
@@ -22,12 +23,21 @@ void ofApp::setup(){
 
     pan = 0.5f;
 
+	xn = 0;
+	xn_1 = 0;
+	xn_2 = 0;
+	yn = 0;
+	yn_1 = 0;
+	yn_2 = 0;
+
+	f0 = 1000.;
+
 	lAudio.assign(bufferSize, 0.0);
 	uAudio.assign(bufferSize, 0.0);
 	fTransform.assign(bufferSize, 0.0);
 	f1Transform.assign(bufferSize, 0.0);
 	f2Transform.assign(bufferSize, 0.0);
-	
+
 	oscillator.setup(sampleRate);
 
 	soundStream.printDeviceList();
@@ -106,7 +116,8 @@ void ofApp::draw(){
 						+ "White Keys: a z e r t y u" + "\n" +
 						+ "Black Keys: s d f g h" + "\n" +
 						+ "Brillance " + ofToString(oscillator.brightness) + "\n" +
-						+ "Forme d'onde " + ofToString(oscillator.waveform);
+						+ "Forme d'onde " + ofToString(oscillator.waveform) + "\n" +
+						+ "Filtre " + ofToString(f0);
     ofDrawBitmapString(reportString, 32, 579);
 }
 
@@ -140,6 +151,16 @@ void ofApp::keyPressed(int key){
         else if(oscillator.waveform == SAW) oscillator.setWaveform(TRIANGLE);
         else if(oscillator.waveform == TRIANGLE) oscillator.setWaveform(SINE);
     }
+
+	if (key == '*')
+	{
+		f0 += 100.;
+	}
+	if (key == '/')
+	{
+		f0 -= 100.;
+	}
+	
 
 		if(key == OF_KEY_UP){
 			if(oscillator.octave < 10){
@@ -225,9 +246,20 @@ void ofApp::audioOut(ofSoundBuffer & buffer){
 
         phase += phaseAdder;
 		oscillator.setFrequency(targetFrequency);
-        float sample = oscillator.getNextSample();
 
-        buffer[i] = sample * volume;
+		xn_2 = xn_1;
+		xn_1 = xn;
+
+		yn_2 = yn_1;
+		yn_1 = yn;
+
+        sample = oscillator.getNextSample();
+		xn = sample;
+
+		yn = computeIIRFilter();
+
+        // buffer[i] = sample * volume;
+        buffer[i] = yn * volume;
         lAudio[i] = buffer[i];
         uAudio[i] = buffer[i];
     }
@@ -256,6 +288,19 @@ void ofApp::computeFourierTransform(const ofSoundBuffer& buffer) {
 	}
 }
 
+float ofApp::computeIIRFilter() {
+	Fs = sampleRate;
+	wo = glm::two_pi<float>() * (f0 / Fs);
+	Q  = 1;
+	a  = sin(wo)/(2*Q);
+	b0 = a;
+	b1 = 0;
+	b2 = -a;
+	a0 = 1 + a;
+	a1 = -2 * cos(wo);
+	a2 = 1 - a;
+	return (b0/a0) * xn + (b1/a0) * xn_1 + (b2/a0) * xn_2 - (a1/a0) * yn_1 - (a2/a0) * yn_2;
+}
 
 //--------------------------------------------------------------
 void ofApp::gotMessage(ofMessage msg){ }

@@ -14,11 +14,11 @@ public:
     // Setters
     void setFrequency(float freq);
     void setWaveform(Waveform type);
-    void setBrightness(int bright);
+    void setBrightness(float bright);
 
     // Get next sample
     float getNextSample();
-    int brightness;
+    float brightness;
     Waveform waveform;
     int octave;
 

@@ -156,13 +156,13 @@ void ofApp::keyPressed(int key){
 
 	if(key == '+'){
 
-		oscillator.setBrightness(oscillator.brightness + 1);
+		oscillator.setBrightness(oscillator.brightness + 0.1);
 	}
 
 	if(key == '-'){
 		if(oscillator.brightness == 0){}
 		else{
-		oscillator.setBrightness(oscillator.brightness - 1);
+		oscillator.setBrightness(oscillator.brightness - 0.1);
 		}
 	}
     if(frequency > 0){

@@ -22,6 +22,7 @@ class ofApp : public ofBaseApp{
 		
 		void audioOut(ofSoundBuffer & buffer);
 		void computeFourierTransform(const ofSoundBuffer& buffer);
+		float computeIIRFilter();
 		
 		ofSoundStream soundStream;
 
@@ -40,6 +41,7 @@ class ofApp : public ofBaseApp{
 		float phase;
 		float phaseAdder;
 		float phaseAdderTarget;
+		float sample;
 
 
 		// ===== ENVELOPPE =====
@@ -50,4 +52,27 @@ class ofApp : public ofBaseApp{
 		bool  noteIsOn;      // état de la note
 
 		Oscillator oscillator;
+
+		// filter
+		bool lowpass;
+
+		float f0; 
+		float Fs; 
+		float wo; 
+		float Q;  
+		float a;  
+		float b0; 
+		float b1; 
+		float b2; 
+		float a0; 
+		float a1; 
+		float a2; 
+
+		float xn;
+		float xn_1;
+		float xn_2;
+		float yn;
+		float yn_1;
+		float yn_2;
+		
 };

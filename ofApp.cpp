@@ -117,7 +117,7 @@ void ofApp::draw(){
 						+ "Black Keys: s d f g h" + "\n" +
 						+ "Brillance " + ofToString(oscillator.brightness) + "\n" +
 						+ "Forme d'onde " + ofToString(oscillator.waveform) + "\n" +
-						+ "Filtre " + ofToString(f0);
+						+ "Filtre passe haut " + ofToString(f0);
     ofDrawBitmapString(reportString, 32, 579);
 }
 
@@ -152,11 +152,11 @@ void ofApp::keyPressed(int key){
         else if(oscillator.waveform == TRIANGLE) oscillator.setWaveform(SINE);
     }
 
-	if (key == '*')
+	if (key == '*' && f0 < sampleRate/2 - 100)
 	{
 		f0 += 100.;
 	}
-	if (key == '/')
+	if (key == '/' && f0 > 99)
 	{
 		f0 -= 100.;
 	}

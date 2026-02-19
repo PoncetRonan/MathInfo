@@ -31,7 +31,7 @@ void Oscillator::setWaveform(Waveform type)
     waveform = type;
 }
 
-void Oscillator::setBrightness(int bright)
+void Oscillator::setBrightness(float bright)
 {
     brightness = bright;
 }
@@ -50,46 +50,66 @@ float Oscillator::getNextSample()
 
         case SQUARE:
         {
-            int maxHarmonic = static_cast<int>(sampleRate / (2 * frequency));
-            int effectiveBrightness = std::min(brightness, maxHarmonic);
+            float maxHarmonic = static_cast<float>(sampleRate / (2 * frequency));
+            float effectiveBrightness = std::min(brightness, maxHarmonic);
+            int intBrightness=static_cast<int>(effectiveBrightness);
+            float floatBrightness = effectiveBrightness - intBrightness;
 
             float scarre = 0.0f;
-            for (int k = 0; k < effectiveBrightness; k++)
+            for (int k = 0; k < intBrightness + 1; k++){
+                if(k == intBrightness){
+                    scarre += floatBrightness * (sin(phase * (2*k + 1)) / (2*k + 1));
+                }
+                else{
                 scarre += sin(phase * (2*k + 1)) / (2*k + 1);
-
+            }}
             return 4.0f / glm::pi<float>() * scarre;
         }
 
         case SAW:
         {
-            int maxHarmonic = static_cast<int>(sampleRate / (2 * frequency));
-            int effectiveBrightness = std::min(brightness, maxHarmonic);
+            float maxHarmonic = static_cast<float>(sampleRate / (2 * frequency));
+            float effectiveBrightness = std::min(brightness, maxHarmonic);
+            int intBrightness=static_cast<int>(effectiveBrightness);
+            float floatBrightness = effectiveBrightness - intBrightness;
 
             if (effectiveBrightness == 0)
                 return sin(phase);
 
             float sscie = 0.0f;
-            for (int k = 1; k <= effectiveBrightness; k++)
+            for (int k = 1; k <= intBrightness + 1; k++)
             {
+                if(k == intBrightness){
+                float sign = (k % 2 == 0) ? -1.0f : 1.0f;
+                sscie += floatBrightness *(sign * sin(phase * k) / k);
+                }
+                else{
                 float sign = (k % 2 == 0) ? -1.0f : 1.0f;
                 sscie += sign * sin(phase * k) / k;
-            }
+            }}
 
             return 2.0f / glm::pi<float>() * sscie;
         }
 
         case TRIANGLE:
         {
-            int maxHarmonic = static_cast<int>(sampleRate / (2 * frequency));
-            int effectiveBrightness = std::min(brightness, maxHarmonic);
-
+            float maxHarmonic = static_cast<float>(sampleRate / (2 * frequency));
+            float effectiveBrightness = std::min(brightness, maxHarmonic);
+            int intBrightness=static_cast<int>(effectiveBrightness);
+            float floatBrightness = effectiveBrightness - intBrightness;
             float striangle = 0.0f;
-            for (int k = 0; k < effectiveBrightness; k++)
+            for (int k = 0; k < intBrightness +1; k++)
+
             {
                 int harmonic = 2*k + 1;
                 float sign = (k % 2 == 0) ? 1.0f : -1.0f;
+                if(k == intBrightness){
+                striangle += floatBrightness*(sign * sin(phase * harmonic) / (harmonic * harmonic));
+
+                }
+                else{
                 striangle += sign * sin(phase * harmonic) / (harmonic * harmonic);
-            }
+            }}
 
             return 8.0f / (glm::pi<float>() * glm::pi<float>()) * striangle;
         }

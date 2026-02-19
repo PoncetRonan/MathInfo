@@ -54,6 +54,8 @@ class ofApp : public ofBaseApp{
 		Oscillator oscillator;
 
 		// filter
+		bool lowpass;
+
 		float f0; 
 		float Fs; 
 		float wo; 

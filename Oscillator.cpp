@@ -56,8 +56,8 @@ float Oscillator::getNextSample()
             float floatBrightness = effectiveBrightness - intBrightness;
 
             float scarre = 0.0f;
-            for (int k = 0; k < intBrightness + 1; k++){
-                if(k == intBrightness){
+            for (int k = 0; k < intBrightness; k++){
+                if(k == intBrightness -1){
                     scarre += floatBrightness * (sin(phase * (2*k + 1)) / (2*k + 1));
                 }
                 else{
@@ -77,9 +77,9 @@ float Oscillator::getNextSample()
                 return sin(phase);
 
             float sscie = 0.0f;
-            for (int k = 1; k <= intBrightness + 1; k++)
+            for (int k = 1; k <= intBrightness; k++)
             {
-                if(k == intBrightness){
+                if(k == intBrightness -1 ){
                 float sign = (k % 2 == 0) ? -1.0f : 1.0f;
                 sscie += floatBrightness *(sign * sin(phase * k) / k);
                 }
@@ -98,12 +98,12 @@ float Oscillator::getNextSample()
             int intBrightness=static_cast<int>(effectiveBrightness);
             float floatBrightness = effectiveBrightness - intBrightness;
             float striangle = 0.0f;
-            for (int k = 0; k < intBrightness +1; k++)
+            for (int k = 0; k < intBrightness; k++)
 
             {
                 int harmonic = 2*k + 1;
                 float sign = (k % 2 == 0) ? 1.0f : -1.0f;
-                if(k == intBrightness){
+                if(k == intBrightness - 1){
                 striangle += floatBrightness*(sign * sin(phase * harmonic) / (harmonic * harmonic));
 
                 }

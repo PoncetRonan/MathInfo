@@ -23,6 +23,8 @@ void ofApp::setup(){
 
     pan = 0.5f;
 
+	lowpass = false;
+
 	xn = 0;
 	xn_1 = 0;
 	xn_2 = 0;
@@ -117,7 +119,8 @@ void ofApp::draw(){
 						+ "Black Keys: s d f g h" + "\n" +
 						+ "Brillance " + ofToString(oscillator.brightness) + "\n" +
 						+ "Forme d'onde " + ofToString(oscillator.waveform) + "\n" +
-						+ "Filtre passe haut " + ofToString(f0);
+						+ "Filtre passe bas activation: " + ofToString(lowpass) + "\n" +
+						+ "Filtre passe bas frequency: " + ofToString(f0);
     ofDrawBitmapString(reportString, 32, 579);
 }
 
@@ -152,15 +155,27 @@ void ofApp::keyPressed(int key){
         else if(oscillator.waveform == TRIANGLE) oscillator.setWaveform(SINE);
     }
 
-	if (key == '*' && f0 < sampleRate/2 - 100)
+	if (key == 'l')
 	{
-		f0 += 100.;
-	}
-	if (key == '/' && f0 > 99)
-	{
-		f0 -= 100.;
+		if (lowpass)
+		{
+			lowpass = false;
+		} else {
+			lowpass = true;
+		}
 	}
 	
+	if (lowpass)
+	{
+		if (key == '*' && f0 < sampleRate/2 - 100)
+		{
+			f0 += 100.;
+		}
+		if (key == '/' && f0 > 99)
+		{
+			f0 -= 100.;
+		}
+	}
 
 		if(key == OF_KEY_UP){
 			if(oscillator.octave < 10){
@@ -258,8 +273,13 @@ void ofApp::audioOut(ofSoundBuffer & buffer){
 
 		yn = computeIIRFilter();
 
-        // buffer[i] = sample * volume;
-        buffer[i] = yn * volume;
+		if (lowpass)
+		{
+			buffer[i] = yn * volume;
+		} else {
+			buffer[i] = sample * volume;
+		}
+		
         lAudio[i] = buffer[i];
         uAudio[i] = buffer[i];
     }

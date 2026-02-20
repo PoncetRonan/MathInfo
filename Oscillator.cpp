@@ -50,19 +50,23 @@ float Oscillator::getNextSample()
 
         case SQUARE:
         {
-            float maxHarmonic = static_cast<float>(sampleRate / (2 * frequency));
-            float effectiveBrightness = std::min(brightness, maxHarmonic);
-            int intBrightness=static_cast<int>(effectiveBrightness);
-            float floatBrightness = effectiveBrightness - intBrightness;
+            // Nombre max de k tel que (2k+1) * freq < Nyquist
+            float limitK = (sampleRate / (2.0f * frequency) - 1.0f) / 2.0f;
+            float effectiveK = std::min((float)brightness, limitK);
+            
+            int numHarmonics = static_cast<int>(effectiveK);
+            float remainder = effectiveK - numHarmonics;
 
             float scarre = 0.0f;
-            for (int k = 0; k < intBrightness; k++){
-                if(k == intBrightness -1){
-                    scarre += floatBrightness * (sin(phase * (2*k + 1)) / (2*k + 1));
-                }
-                else{
-                scarre += sin(phase * (2*k + 1)) / (2*k + 1);
-            }}
+            for (int k = 0; k <= numHarmonics; k++) {
+                float hIndex = 2.0f * k + 1.0f;
+                float amplitude = 1.0f / hIndex;
+                
+                if (k == numHarmonics) 
+                    scarre += remainder * (sin(phase * hIndex) * amplitude);
+                else 
+                    scarre += (sin(phase * hIndex) * amplitude);
+            }
             return 4.0f / glm::pi<float>() * scarre;
         }
 

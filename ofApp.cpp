@@ -108,18 +108,18 @@ void ofApp::drawBackground(){
 
     // ---- Particules flottantes néon ----
     ofSeedRandom(42);
-    int numParticles = 60;
+    int numParticles = 45 * static_cast<int>(brightnessSlider);
     for(int i = 0; i < numParticles; i++){
         float px    = ofRandom(ofGetWidth());
         float py    = ofRandom(ofGetHeight());
-        float speed = ofRandom(0.15f, 0.6f);
-        float drift = ofRandom(0.05f, 0.3f);
+        float speed = ofRandom(0.15f*(oscillator.octave+1), 0.6f*(oscillator.octave+1));
+        float drift = ofRandom(0.05f*(oscillator.octave+1), 0.3f*(oscillator.octave+1));
         float fx    = px + sin(t * speed + i * 1.3f) * 18.0f;
         float fy    = py + cos(t * drift  + i * 2.1f) * 12.0f;
-        float sz    = ofRandom(1.5f, 4.0f);
+        float sz    = ofRandom(1.5f+(noteIsOn * ofRandom(3)), 4.0f+(noteIsOn * ofRandom(3)));
         float alpha = ofClamp(ofRandom(30, 90) + volume * 80, 0, 255);
 
-        if(i % 2 == 0) ofSetColor(0, 200, 255, alpha);
+        if(i % 2 == 0 && lowpassToggle == false) ofSetColor(0, 200, 255, alpha);
         else            ofSetColor(245, 58, 135, alpha);
         ofFill();
         ofDrawCircle(fx, fy, sz);

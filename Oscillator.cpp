@@ -15,7 +15,7 @@ void Oscillator::setup(float sr)
     frequency = 440.0f;
     phase = 0.0f;
     waveform = SINE;
-    brightness = 10;
+    brightness = 2;
     octave=1;
     updatePhaseIncrement();
 }

@@ -2,7 +2,7 @@
 
 #include "ofMain.h"
 #include "Oscillator.h"
-#include "ofxGui.h" // Nécessaire pour l'interface graphique
+#include "ofxGui.h"
 
 class ofApp : public ofBaseApp{
 
@@ -10,6 +10,7 @@ class ofApp : public ofBaseApp{
 		void setup();
 		void update();
 		void draw();
+		void drawBackground(); // Fond procédural animé
 
 		void keyPressed(int key);
 		void keyReleased(int key);
@@ -44,11 +45,11 @@ class ofApp : public ofBaseApp{
 		float sample;
 
 		// ===== ENVELOPPE =====
-		float volume;        // volume courant (pour le lissage)
-		float attackSpeed;   // vitesse montée
-		float releaseSpeed;  // vitesse descente
-		bool  noteIsOn;      // état de la note
-		int   activeKey;     // touche clavier actuellement enfoncée (0 = aucune)
+		float volume;
+		float attackSpeed;
+		float releaseSpeed;
+		bool  noteIsOn;
+		int   activeKey;
 
 		Oscillator oscillator;
 
@@ -59,14 +60,10 @@ class ofApp : public ofBaseApp{
 		float xn, xn_1, xn_2;
 		float yn, yn_1, yn_2;
 
-		// ==========================================
-		// INTERFACE GRAPHIQUE (GUI)
-		// ==========================================
-		ofxPanel gui;                    // Panneau principal
-		ofxFloatSlider volumeMax;        // Slider pour le volume max
-		ofxFloatSlider brightnessSlider; // Slider pour la brillance de l'oscillateur
-		ofxFloatSlider cutoffSlider;     // Slider pour la fréquence du filtre
-		ofxToggle lowpassToggle;         // Interrupteur pour activer/désactiver le filtre
-		// ==========================================
-		
+		// ===== GUI =====
+		ofxPanel gui;
+		ofxFloatSlider volumeMax;
+		ofxFloatSlider brightnessSlider;
+		ofxFloatSlider cutoffSlider;
+		ofxToggle lowpassToggle;
 };

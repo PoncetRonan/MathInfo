@@ -3,17 +3,16 @@
 //--------------------------------------------------------------
 void ofApp::setup(){
 
-    ofBackground(34, 34, 34);
+    ofBackground(10, 10, 20);
     ofSetCircleResolution(60);
 
     int bufferSize = 512;
     sampleRate = 44100;
 
-    // Initialisation des variables de phase et fréquence
     phase = 0;
     phaseAdder = 0.0f;
     phaseAdderTarget = 0.0f;
-    targetFrequency = 261.63f; // Do par défaut
+    targetFrequency = 261.63f;
     sample = 0;
 
     // ===== ENVELOPPE =====
@@ -31,14 +30,13 @@ void ofApp::setup(){
     yn = yn_1 = yn_2 = 0;
     f0 = 1000.0f;
 
-    // ===== INTERFACE GRAPHIQUE (GUI) =====
+    // ===== GUI =====
     gui.setup("Parametres Synth");
     gui.add(volumeMax.setup("Volume Max", 0.2f, 0.0f, 0.5f));
-    gui.add(brightnessSlider.setup("Brillance", 10.0f, 1.0f, 40.0f));
+    gui.add(brightnessSlider.setup("Brillance", 2.0f, 1.0f, 10.0f));
     gui.add(cutoffSlider.setup("Filtre Freq (Hz)", 1000.0f, 50.0f, 5000.0f));
     gui.add(lowpassToggle.setup("Activer Filtre", false));
     
-    // Initialisation des buffers pour la visualisation
     uAudio.assign(bufferSize, 0.0);
     fTransform.assign(bufferSize, 0.0);
     f1Transform.assign(bufferSize, 0.0);
@@ -46,13 +44,11 @@ void ofApp::setup(){
 
     oscillator.setup(sampleRate);
 
-    // Configuration du flux audio
     ofSoundStreamSettings settings;
     auto devices = soundStream.getMatchingDevices("default");
     if(!devices.empty()){
         settings.setOutDevice(devices[0]);
     }
-
     settings.setOutListener(this);
     settings.sampleRate = sampleRate;
     settings.numOutputChannels = 1;
@@ -63,26 +59,121 @@ void ofApp::setup(){
 
 //--------------------------------------------------------------
 void ofApp::update(){
-    // Mise à jour des paramètres de l'oscillateur et du filtre via le GUI
     oscillator.setBrightness(brightnessSlider);
     f0 = cutoffSlider;
     lowpass = lowpassToggle;
 }
 
 //--------------------------------------------------------------
+void ofApp::drawBackground(){
+    float t = ofGetElapsedTimef();
+
+    // Fond noir bleuté
+    ofBackground(10, 10, 20);
+
+    // ---- Grille animée style oscilloscope ----
+    ofSetLineWidth(1);
+    int gridStep = 40;
+    for(int x = 0; x < ofGetWidth(); x += gridStep){
+        float alpha = ofMap(sin(t * 0.4f + x * 0.015f), -1, 1, 15, 55);
+        ofSetColor(0, 90, 140, alpha);
+        ofDrawLine(x, 0, x, ofGetHeight());
+    }
+    for(int y = 0; y < ofGetHeight(); y += gridStep){
+        float alpha = ofMap(sin(t * 0.4f + y * 0.015f), -1, 1, 15, 55);
+        ofSetColor(0, 90, 140, alpha);
+        ofDrawLine(0, y, ofGetWidth(), y);
+    }
+
+    // ---- Lignes de scan CRT ----
+    for(int y = 0; y < ofGetHeight(); y += 4){
+        ofSetColor(0, 0, 0, 18);
+        ofDrawLine(0, y, ofGetWidth(), y);
+    }
+
+    // ---- Lueur centrale pulsante ----
+    float pulse   = volume * 320.0f;
+    float breathe = ofMap(sin(t * 1.2f), -1, 1, 0.85f, 1.15f);
+    float baseW   = 420.0f * breathe;
+    float baseH   = 220.0f * breathe;
+
+    ofSetColor(245, 58, 135, 8  + volume * 25);
+    ofDrawEllipse(ofGetWidth()/2, ofGetHeight()/2, baseW + pulse * 1.4f, baseH + pulse * 0.7f);
+
+    ofSetColor(180, 30, 100, 12 + volume * 35);
+    ofDrawEllipse(ofGetWidth()/2, ofGetHeight()/2, baseW + pulse, baseH + pulse * 0.5f);
+
+    ofSetColor(245, 58, 135, 18 + volume * 50);
+    ofDrawEllipse(ofGetWidth()/2, ofGetHeight()/2, baseW * 0.55f + pulse * 0.4f, baseH * 0.55f + pulse * 0.2f);
+
+    // ---- Particules flottantes néon ----
+    ofSeedRandom(42);
+    int numParticles = 60;
+    for(int i = 0; i < numParticles; i++){
+        float px    = ofRandom(ofGetWidth());
+        float py    = ofRandom(ofGetHeight());
+        float speed = ofRandom(0.15f, 0.6f);
+        float drift = ofRandom(0.05f, 0.3f);
+        float fx    = px + sin(t * speed + i * 1.3f) * 18.0f;
+        float fy    = py + cos(t * drift  + i * 2.1f) * 12.0f;
+        float sz    = ofRandom(1.5f, 4.0f);
+        float alpha = ofClamp(ofRandom(30, 90) + volume * 80, 0, 255);
+
+        if(i % 2 == 0) ofSetColor(0, 200, 255, alpha);
+        else            ofSetColor(245, 58, 135, alpha);
+        ofFill();
+        ofDrawCircle(fx, fy, sz);
+    }
+
+    // ---- Grande sinusoïde décorative de fond ----
+    ofSetLineWidth(1.5f);
+    ofSetColor(0, 191, 255, 25 + volume * 40);
+    ofBeginShape();
+    for(int x = 0; x <= ofGetWidth(); x += 3){
+        float y = ofGetHeight() * 0.5f
+                  + sin(x * 0.012f + t * 1.5f) * (30.0f + volume * 60.0f)
+                  + sin(x * 0.025f + t * 0.8f) * (15.0f + volume * 30.0f);
+        ofVertex(x, y);
+    }
+    ofEndShape(false);
+
+    // ---- Vignette (bords sombres) ----
+    int vSize = 120;
+    for(int i = 0; i < vSize; i++){
+        float a = ofMap(i, 0, vSize, 80, 0);
+        ofSetColor(0, 0, 0, a);
+        ofDrawRectangle(i,                   i,                    ofGetWidth()  - i*2, 1);
+        ofDrawRectangle(i,                   ofGetHeight() - i - 1, ofGetWidth() - i*2, 1);
+        ofDrawRectangle(i,                   i,                    1, ofGetHeight() - i*2);
+        ofDrawRectangle(ofGetWidth() - i - 1, i,                    1, ofGetHeight() - i*2);
+    }
+}
+
+//--------------------------------------------------------------
 void ofApp::draw(){
 
-    ofSetColor(225);
+    // ===== FOND ANIMÉ =====
+    drawBackground();
+
+    // ===== TITRE =====
+    ofSetColor(200, 200, 220);
     ofDrawBitmapString("SYNTHETISEUR INTERACTIF", 32, 32);
     
-    // Dessin de la forme d'onde (Mono Channel)
+    // ===== Signal Temporel =====
     ofPushStyle();
     ofPushMatrix();
     ofTranslate(32, 100, 0);
-    ofSetColor(225);
+
+    ofSetColor(0, 0, 0, 110);
+    ofFill();
+    ofDrawRectangle(0, 0, 900, 150);
+
+    ofSetColor(200, 200, 220);
     ofDrawBitmapString("Signal Temporel", 4, 18);
     ofNoFill();
+    ofSetColor(80, 80, 100, 180);
     ofDrawRectangle(0, 0, 900, 150);
+
     ofSetColor(245, 58, 135);
     ofSetLineWidth(2);
     ofBeginShape();
@@ -94,14 +185,21 @@ void ofApp::draw(){
     ofPopMatrix();
     ofPopStyle();
 
-    // Dessin de la FFT
+    // ===== FFT =====
     ofPushStyle();
     ofPushMatrix();
     ofTranslate(32, 280, 0);
-    ofSetColor(225);
-    ofDrawBitmapString("Analyse Frequentielle (FFT)", 4, 18);
-    ofNoFill();
+
+    ofSetColor(0, 0, 0, 110);
+    ofFill();
     ofDrawRectangle(0, 0, 900, 150);
+
+    ofSetColor(200, 200, 220);
+    ofDrawBitmapString("Analyse Frequentielle", 4, 18);
+    ofNoFill();
+    ofSetColor(80, 80, 100, 180);
+    ofDrawRectangle(0, 0, 900, 150);
+
     ofSetColor(0, 191, 255);
     ofBeginShape();
     for (unsigned int i = 0; i < fTransform.size() / 2; i++){
@@ -112,11 +210,11 @@ void ofApp::draw(){
     ofPopMatrix();
     ofPopStyle();
 
-    // Affichage de l'interface GUI
+    // ===== GUI =====
     gui.draw();
 
-    // Instructions clavier
-    ofSetColor(200);
+    // ===== Info forme d'onde =====
+    ofSetColor(180, 180, 200);
     string info = "Forme d'onde (w): " + ofToString(oscillator.waveform);
     ofDrawBitmapString(info, 32, 460);
 
@@ -125,7 +223,6 @@ void ofApp::draw(){
     ofPushMatrix();
     ofTranslate(32, 480);
 
-    // Définition des touches : key, label ligne1, label ligne2, isBlack, xPos
     struct KeyNote { int key; string line1; string line2; bool isBlack; int xPos; };
     vector<KeyNote> keys = {
         {'a', "a",  "Do",   false, 0},
@@ -142,46 +239,40 @@ void ofApp::draw(){
         {'u', "u",  "Si",   false, 300},
     };
 
-    // 1) Touches blanches
+    // Touches blanches
     for (auto& k : keys) {
         if (!k.isBlack) {
             bool isActive = (activeKey == k.key);
-            // Fond
             if (isActive) ofSetColor(245, 58, 135);
-            else          ofSetColor(240);
+            else          ofSetColor(220, 220, 230);
             ofFill();
             ofDrawRectangle(k.xPos, 0, 48, 120);
-            // Bordure
-            ofSetColor(80);
+            ofSetColor(60, 60, 80);
             ofNoFill();
             ofDrawRectangle(k.xPos, 0, 48, 120);
-            // Labels
-            if (isActive) ofSetColor(255);
-            else          ofSetColor(40);
+            if (isActive) ofSetColor(255, 255, 255);
+            else          ofSetColor(40, 40, 60);
             ofDrawBitmapString(k.line1, k.xPos + 17, 85);
             ofDrawBitmapString(k.line2, k.xPos + (k.line2.size() == 2 ? 14 : 8), 100);
         }
     }
 
-    // 2) Touches noires (par-dessus)
+    // Touches noires
     for (auto& k : keys) {
         if (k.isBlack) {
             bool isActive = (activeKey == k.key);
-            // Fond
             if (isActive) ofSetColor(245, 58, 135);
-            else          ofSetColor(30);
+            else          ofSetColor(20, 20, 35);
             ofFill();
             ofDrawRectangle(k.xPos, 0, 32, 75);
-            // Labels
-            if (isActive) ofSetColor(255);
-            else          ofSetColor(200);
+            if (isActive) ofSetColor(255, 255, 255);
+            else          ofSetColor(180, 180, 200);
             ofDrawBitmapString(k.line1, k.xPos + 11, 50);
             ofDrawBitmapString(k.line2, k.xPos + (k.line2.size() == 3 ? 4 : 8), 63);
         }
     }
 
-    // Légende octave
-    ofSetColor(180);
+    ofSetColor(160, 160, 190);
     ofDrawBitmapString("Octave: " + ofToString(oscillator.octave) + "   (Up / Down pour changer)", 0, 145);
 
     ofPopMatrix();
@@ -208,10 +299,10 @@ void ofApp::keyPressed(int key){
     }
 
     if(key == 'w'){
-        if(oscillator.waveform == SINE)         oscillator.setWaveform(SQUARE);
-        else if(oscillator.waveform == SQUARE)  oscillator.setWaveform(SAW);
-        else if(oscillator.waveform == SAW)     oscillator.setWaveform(TRIANGLE);
-        else if(oscillator.waveform == TRIANGLE)oscillator.setWaveform(SINE);
+        if(oscillator.waveform == SINE)          oscillator.setWaveform(SQUARE);
+        else if(oscillator.waveform == SQUARE)   oscillator.setWaveform(SAW);
+        else if(oscillator.waveform == SAW)      oscillator.setWaveform(TRIANGLE);
+        else if(oscillator.waveform == TRIANGLE) oscillator.setWaveform(SINE);
     }
 
     if(key == OF_KEY_UP   && oscillator.octave < 8) oscillator.octave++;
@@ -236,7 +327,6 @@ void ofApp::audioOut(ofSoundBuffer & buffer){
 
     for (size_t i = 0; i < buffer.getNumFrames(); i++){
 
-        // Gestion de l'enveloppe
         if(noteIsOn){
             volume += attackSpeed;
             if(volume > volumeMax) volume = (float)volumeMax;
@@ -245,10 +335,8 @@ void ofApp::audioOut(ofSoundBuffer & buffer){
             if(volume < 0.0f) volume = 0.0f;
         }
 
-        // Génération du signal
         sample = oscillator.getNextSample();
         
-        // Filtrage IIR
         xn_2 = xn_1;
         xn_1 = xn;
         xn = sample;
@@ -300,27 +388,9 @@ void ofApp::computeFourierTransform(const ofSoundBuffer& buffer) {
 }
 
 //--------------------------------------------------------------
-void ofApp::mouseMoved(int x, int y ){
-    pan = (float)x / (float)ofGetWidth();
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseDragged(int x, int y, int button){
-    pan = (float)x / (float)ofGetWidth();
-}
-
-//--------------------------------------------------------------
-void ofApp::mousePressed(int x, int y, int button){
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseReleased(int x, int y, int button){
-}
-
-//--------------------------------------------------------------
-void ofApp::dragEvent(ofDragInfo dragInfo){ 
-}
-
-//--------------------------------------------------------------
-void ofApp::gotMessage(ofMessage msg){
-}
+void ofApp::mouseMoved(int x, int y ){ pan = (float)x / (float)ofGetWidth(); }
+void ofApp::mouseDragged(int x, int y, int button){ pan = (float)x / (float)ofGetWidth(); }
+void ofApp::mousePressed(int x, int y, int button){}
+void ofApp::mouseReleased(int x, int y, int button){}
+void ofApp::dragEvent(ofDragInfo dragInfo){}
+void ofApp::gotMessage(ofMessage msg){}

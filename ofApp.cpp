@@ -115,12 +115,13 @@ void ofApp::draw(){
 	string reportString = string("Envelope synth\n") // Wrap the first one in string()
 						+ "Current volume: " + ofToString(volume, 2) + "\n"
 						+ "Frequency: " + ofToString(targetFrequency, 2) + " Hz\n"
-						+ "White Keys: a z e r t y u" + "\n" +
-						+ "Black Keys: s d f g h" + "\n" +
-						+ "Brillance " + ofToString(oscillator.brightness) + "\n" +
-						+ "Forme d'onde " + ofToString(oscillator.waveform) + "\n" +
-						+ "Filtre passe bas activation: " + ofToString(lowpass) + "\n" +
-						+ "Filtre passe bas frequency: " + ofToString(f0);
+						+ "Changer d'octave (up arrow / down arrow) \n"
+						+ "White Keys: a z e r t y u" + "\n"
+						+ "Black Keys: s d f g h" + "\n"
+						+ "Brillance (+-)" + ofToString(oscillator.brightness) + "\n"
+						+ "Forme d'onde (w)" + ofToString(oscillator.waveform) + "\n"
+						+ "Filtre passe bas activation (l): " + ofToString(lowpass) + "\n"
+						+ "Filtre passe bas frequency (*/): " + ofToString(f0);
     ofDrawBitmapString(reportString, 32, 579);
 }
 

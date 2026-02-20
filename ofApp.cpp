@@ -112,7 +112,7 @@ void ofApp::drawBackground(){
     for(int i = 0; i < numParticles; i++){
         float px    = ofRandom(ofGetWidth());
         float py    = ofRandom(ofGetHeight());
-        float speed = ofRandom(0.15f*(oscillator.octave+1), 0.6f*(oscillator.octave+1));
+        float speed = ofRandom(0.15f*(oscillator.octave+1), 0.6f*(oscillator.octave+1));az
         float drift = ofRandom(0.05f*(oscillator.octave+1), 0.3f*(oscillator.octave+1));
         float fx    = px + sin(t * speed + i * 1.3f) * 18.0f;
         float fy    = py + cos(t * drift  + i * 2.1f) * 12.0f;
@@ -305,7 +305,7 @@ void ofApp::keyPressed(int key){
         else if(oscillator.waveform == TRIANGLE) oscillator.setWaveform(SINE);
     }
 
-    if(key == OF_KEY_UP   && oscillator.octave < 8) oscillator.octave++;
+    if(key == OF_KEY_UP   && oscillator.octave < 5) oscillator.octave++;
     if(key == OF_KEY_DOWN && oscillator.octave > 0) oscillator.octave--;
 
     if(frequency > 0){

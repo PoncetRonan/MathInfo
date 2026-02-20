@@ -48,6 +48,7 @@ class ofApp : public ofBaseApp{
 		float attackSpeed;   // vitesse montée
 		float releaseSpeed;  // vitesse descente
 		bool  noteIsOn;      // état de la note
+		int   activeKey;     // touche clavier actuellement enfoncée (0 = aucune)
 
 		Oscillator oscillator;
 

@@ -21,6 +21,7 @@ void ofApp::setup(){
     attackSpeed = 0.01f;  
     releaseSpeed = 0.01f; 
     noteIsOn = false;
+    activeKey = 0;
 
     pan = 0.5f;
 
@@ -116,9 +117,75 @@ void ofApp::draw(){
 
     // Instructions clavier
     ofSetColor(200);
-    string info = "Clavier: a,z,e,r,t,y,u (Notes) | Up/Down (Octave: " + ofToString(oscillator.octave) + ")\n";
-    info += "Forme d'onde (w): " + ofToString(oscillator.waveform);
-    ofDrawBitmapString(info, 32, 480);
+    string info = "Forme d'onde (w): " + ofToString(oscillator.waveform);
+    ofDrawBitmapString(info, 32, 460);
+
+    // ===== CLAVIER VISUEL =====
+    ofPushStyle();
+    ofPushMatrix();
+    ofTranslate(32, 480);
+
+    // Définition des touches : key, label ligne1, label ligne2, isBlack, xPos
+    struct KeyNote { int key; string line1; string line2; bool isBlack; int xPos; };
+    vector<KeyNote> keys = {
+        {'a', "a",  "Do",   false, 0},
+        {'s', "s",  "Do#",  true,  25},
+        {'z', "z",  "Re",   false, 50},
+        {'d', "d",  "Re#",  true,  75},
+        {'e', "e",  "Mi",   false, 100},
+        {'r', "r",  "Fa",   false, 150},
+        {'f', "f",  "Fa#",  true,  175},
+        {'t', "t",  "Sol",  false, 200},
+        {'g', "g",  "Sol#", true,  225},
+        {'y', "y",  "La",   false, 250},
+        {'h', "h",  "La#",  true,  275},
+        {'u', "u",  "Si",   false, 300},
+    };
+
+    // 1) Touches blanches
+    for (auto& k : keys) {
+        if (!k.isBlack) {
+            bool isActive = (activeKey == k.key);
+            // Fond
+            if (isActive) ofSetColor(245, 58, 135);
+            else          ofSetColor(240);
+            ofFill();
+            ofDrawRectangle(k.xPos, 0, 48, 120);
+            // Bordure
+            ofSetColor(80);
+            ofNoFill();
+            ofDrawRectangle(k.xPos, 0, 48, 120);
+            // Labels
+            if (isActive) ofSetColor(255);
+            else          ofSetColor(40);
+            ofDrawBitmapString(k.line1, k.xPos + 17, 85);
+            ofDrawBitmapString(k.line2, k.xPos + (k.line2.size() == 2 ? 14 : 8), 100);
+        }
+    }
+
+    // 2) Touches noires (par-dessus)
+    for (auto& k : keys) {
+        if (k.isBlack) {
+            bool isActive = (activeKey == k.key);
+            // Fond
+            if (isActive) ofSetColor(245, 58, 135);
+            else          ofSetColor(30);
+            ofFill();
+            ofDrawRectangle(k.xPos, 0, 32, 75);
+            // Labels
+            if (isActive) ofSetColor(255);
+            else          ofSetColor(200);
+            ofDrawBitmapString(k.line1, k.xPos + 11, 50);
+            ofDrawBitmapString(k.line2, k.xPos + (k.line2.size() == 3 ? 4 : 8), 63);
+        }
+    }
+
+    // Légende octave
+    ofSetColor(180);
+    ofDrawBitmapString("Octave: " + ofToString(oscillator.octave) + "   (Up / Down pour changer)", 0, 145);
+
+    ofPopMatrix();
+    ofPopStyle();
 }
 
 //--------------------------------------------------------------
@@ -141,25 +208,27 @@ void ofApp::keyPressed(int key){
     }
 
     if(key == 'w'){
-        if(oscillator.waveform == SINE) oscillator.setWaveform(SQUARE);
-        else if(oscillator.waveform == SQUARE) oscillator.setWaveform(SAW);
-        else if(oscillator.waveform == SAW) oscillator.setWaveform(TRIANGLE);
-        else if(oscillator.waveform == TRIANGLE) oscillator.setWaveform(SINE);
+        if(oscillator.waveform == SINE)         oscillator.setWaveform(SQUARE);
+        else if(oscillator.waveform == SQUARE)  oscillator.setWaveform(SAW);
+        else if(oscillator.waveform == SAW)     oscillator.setWaveform(TRIANGLE);
+        else if(oscillator.waveform == TRIANGLE)oscillator.setWaveform(SINE);
     }
 
-    if(key == OF_KEY_UP && oscillator.octave < 8) oscillator.octave++;
+    if(key == OF_KEY_UP   && oscillator.octave < 8) oscillator.octave++;
     if(key == OF_KEY_DOWN && oscillator.octave > 0) oscillator.octave--;
 
     if(frequency > 0){
         targetFrequency = frequency * std::pow(2, oscillator.octave);
         oscillator.setFrequency(targetFrequency);
-        noteIsOn = true; 
+        noteIsOn = true;
+        activeKey = key;
     }
 }
 
 //--------------------------------------------------------------
 void ofApp::keyReleased(int key){
     noteIsOn = false;
+    activeKey = 0;
 }
 
 //--------------------------------------------------------------
@@ -232,7 +301,6 @@ void ofApp::computeFourierTransform(const ofSoundBuffer& buffer) {
 
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y ){
-    // Optionnel : mettre à jour le pan ici si vous le souhaitez
     pan = (float)x / (float)ofGetWidth();
 }
 
@@ -243,20 +311,16 @@ void ofApp::mouseDragged(int x, int y, int button){
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button){
-    // Logique au clic si nécessaire
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button){
-    // Logique au relâchement si nécessaire
 }
 
 //--------------------------------------------------------------
 void ofApp::dragEvent(ofDragInfo dragInfo){ 
-    // Gestion du glisser-déposer de fichiers
 }
 
 //--------------------------------------------------------------
 void ofApp::gotMessage(ofMessage msg){
-    // Gestion des messages système
 }
